@@ -14,7 +14,9 @@ The runner and CoreDNS occupy client-net (10.10.0.0/24). The target occupies
 service-net (10.20.0.0/24). Only the router joins both networks, with addresses
 10.10.0.254 and 10.20.0.254. Both Docker bridges are internal. The runner has an
 explicit route to the service subnet; the target has a return route to client-net.
-No NAT, published ports, host networking or shared network namespaces are used.
+No application-traffic NAT, published ports, host networking or shared network
+namespaces are used. Docker's embedded resolver may install its own namespace-local
+DNS translation rules; application traffic does not use that resolver.
 
 CoreDNS at 10.10.0.53 serves an authoritative internal.test zone. The target at
 10.20.0.10 listens on HTTP 8080 and TCP 9000 and 9090. The router forwards 8080

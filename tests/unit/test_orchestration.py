@@ -57,3 +57,15 @@ def test_cleanup_runs_after_startup_failure(tmp_path):
             module.run_lab(tmp_path)
         assert lab.command.call_args.args[0][0] == "down"
         lab.diagnostics.assert_called_once()
+
+
+def test_cli_dispatches_faults_instead_of_repeating_baseline():
+    with patch.object(module, "run_lab") as run:
+        assert module.main(["--repeat", "2", "--scenarios", "--no-build"]) == 0
+    assert len(run.call_args_list) == 4
+    assert [call.kwargs.get("scenario") for call in run.call_args_list] == [
+        None,
+        None,
+        "firewall",
+        "dns",
+    ]

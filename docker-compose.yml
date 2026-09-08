@@ -74,6 +74,7 @@ services:
     environment:
       NETE2E_CONFIG: /lab/environments/docker.yaml
       NETE2E_ARTIFACTS: /artifacts
+      PYTEST_ADDOPTS: '-p no:cacheprovider'
     volumes:
       - ${NETE2E_ARTIFACT_DIR:-./artifacts/manual}:/artifacts
     networks:

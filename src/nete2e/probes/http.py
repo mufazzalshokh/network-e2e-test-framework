@@ -1,4 +1,5 @@
 import asyncio
+import ssl
 import time
 
 import httpx
@@ -7,8 +8,10 @@ from nete2e.models import Category, ProbeResult, validate_endpoint
 
 
 async def _request(url: str, hostname: str, timeout: float) -> dict[str, object]:
+    # Plain HTTP needs no CA store I/O. This context still rejects untrusted TLS.
+    context = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
     async with httpx.AsyncClient(
-        timeout=timeout, trust_env=False, follow_redirects=False
+        timeout=timeout, trust_env=False, follow_redirects=False, verify=context
     ) as client:
         async with client.stream(
             "GET", url, headers={"Host": hostname, "Accept-Encoding": "identity"}

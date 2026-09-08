@@ -237,7 +237,7 @@ def main(argv=None):
             )
         if args.scenarios:
             for scenario in ("firewall", "dns"):
-                run_lab(output / scenario)
+                run_lab(output / scenario, scenario=scenario)
         return 0
     except (OSError, RuntimeError, subprocess.TimeoutExpired, ET.ParseError) as exc:
         print(f"E2E failed: {exc}\nArtifacts: {output}", file=sys.stderr)

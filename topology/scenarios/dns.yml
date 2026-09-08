@@ -1,0 +1,4 @@
+services:
+  dns:
+    volumes:
+      - ./topology/dns/wrong.internal.test:/zones/internal.test:ro

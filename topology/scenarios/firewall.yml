@@ -1,0 +1,4 @@
+services:
+  router:
+    environment:
+      LAB_POLICY: block-allowed

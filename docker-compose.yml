@@ -1,0 +1,98 @@
+services:
+  router:
+    image: nete2e-router:local
+    build:
+      context: .
+      dockerfile: topology/Dockerfile
+      target: router
+    cap_drop: [ALL]
+    cap_add: [NET_ADMIN]
+    security_opt: [no-new-privileges:true]
+    read_only: true
+    sysctls:
+      net.ipv4.ip_forward: '1'
+    networks:
+      client-net:
+        ipv4_address: 10.10.0.254
+      service-net:
+        ipv4_address: 10.20.0.254
+    healthcheck:
+      test: [CMD-SHELL, 'test "$$(cat /proc/sys/net/ipv4/ip_forward)" = 1 && iptables -w 2 -C FORWARD -s 10.10.0.0/24 -d 10.20.0.10 -p tcp --dport 8080 -j ACCEPT']
+      interval: 1s
+      timeout: 3s
+      retries: 20
+    tmpfs: [/run]
+
+  dns:
+    image: coredns/coredns:1.12.1
+    command: [-conf, /etc/coredns/Corefile]
+    user: '10001:10001'
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    read_only: true
+    sysctls:
+      net.ipv4.ip_unprivileged_port_start: '0'
+    volumes:
+      - ./topology/dns/Corefile:/etc/coredns/Corefile:ro
+      - ./topology/dns/internal.test:/zones/internal.test:ro
+    networks:
+      client-net:
+        ipv4_address: 10.10.0.53
+
+  target-service:
+    image: nete2e-target:local
+    build:
+      context: .
+      dockerfile: topology/Dockerfile
+      target: target
+    cap_drop: [ALL]
+    cap_add: [NET_ADMIN, SETPCAP, SETUID, SETGID]
+    security_opt: [no-new-privileges:true]
+    read_only: true
+    networks:
+      service-net:
+        ipv4_address: 10.20.0.10
+    healthcheck:
+      test: [CMD, python, /lab/healthcheck.py]
+      interval: 1s
+      timeout: 4s
+      retries: 20
+
+  e2e-runner:
+    image: nete2e-runner:local
+    build:
+      context: .
+      dockerfile: topology/Dockerfile
+      target: runner
+    cap_drop: [ALL]
+    cap_add: [NET_ADMIN, SETPCAP, SETUID, SETGID]
+    security_opt: [no-new-privileges:true]
+    read_only: true
+    tmpfs: [/tmp]
+    environment:
+      NETE2E_CONFIG: /lab/environments/docker.yaml
+      NETE2E_ARTIFACTS: /artifacts
+    volumes:
+      - ${NETE2E_ARTIFACT_DIR:-./artifacts/manual}:/artifacts
+    networks:
+      client-net:
+        ipv4_address: 10.10.0.2
+    depends_on:
+      router:
+        condition: service_healthy
+      target-service:
+        condition: service_healthy
+      dns:
+        condition: service_started
+
+networks:
+  client-net:
+    internal: true
+    ipam:
+      config:
+        - subnet: 10.10.0.0/24
+  service-net:
+    internal: true
+    ipam:
+      config:
+        - subnet: 10.20.0.0/24

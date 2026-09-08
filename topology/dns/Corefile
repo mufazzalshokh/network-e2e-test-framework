@@ -1,0 +1,5 @@
+internal.test:53 {
+    errors
+    log
+    file /zones/internal.test internal.test
+}

@@ -1,0 +1,22 @@
+environment: docker/client
+dns:
+  server: 10.10.0.53
+  name: service.internal.test
+  expected_addresses: [10.20.0.10]
+  negative_name: missing.internal.test
+service:
+  address: 10.20.0.10
+  hostname: service.internal.test
+  http_port: 8080
+  allowed_tcp_port: 9000
+  blocked_tcp_port: 9090
+routing:
+  destination_subnet: 10.20.0.0/24
+  expected_gateway: 10.10.0.254
+  expected_interface: eth0
+timeouts:
+  connect_seconds: 1
+  dns_seconds: 2
+  http_seconds: 3
+  route_seconds: 2
+  readiness_seconds: 30

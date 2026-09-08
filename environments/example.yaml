@@ -1,0 +1,16 @@
+# Documentation-only addresses; replace with a provisioned IPv4 test environment.
+environment: example/client
+dns:
+  server: 192.0.2.53
+  name: service.internal.test
+  expected_addresses: [198.51.100.10]
+  negative_name: missing.internal.test
+service:
+  address: 198.51.100.10
+  hostname: service.internal.test
+  http_port: 8080
+  allowed_tcp_port: 9000
+  blocked_tcp_port: 9090
+routing:
+  destination_subnet: 198.51.100.0/24
+  expected_gateway: 192.0.2.254

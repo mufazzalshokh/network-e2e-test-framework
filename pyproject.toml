@@ -1,0 +1,40 @@
+[build-system]
+requires = ["setuptools>=75,<83"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "network-e2e-test-framework"
+version = "0.1.0"
+description = "Composable network probes and a routed container test lab"
+requires-python = ">=3.11"
+dependencies = ["dnspython>=2.7,<3", "httpx>=0.28,<1", "pydantic>=2.10,<3", "PyYAML>=6.0.2,<7"]
+
+[project.optional-dependencies]
+dev = ["pytest>=8.3,<9", "ruff>=0.11,<1", "mypy>=1.15,<2", "types-PyYAML>=6.0.12"]
+
+[project.scripts]
+nete2e = "nete2e.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests/unit", "tests/integration"]
+addopts = "-ra --strict-markers"
+markers = ["e2e: real routed network tests requiring a configured environment"]
+
+[tool.ruff]
+target-version = "py311"
+line-length = 100
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "B", "UP", "S"]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/**" = ["S101"]
+"topology/service/server.py" = ["S104"]
+
+[tool.mypy]
+python_version = "3.11"
+strict = true
+files = ["src"]

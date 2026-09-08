@@ -2,6 +2,7 @@ import socket
 import threading
 from contextlib import contextmanager
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
+from unittest.mock import patch
 
 import dns.message
 import dns.rcode
@@ -70,6 +71,15 @@ def test_real_http_deadline():
         result = probe_http("127.0.0.1", port, "service.internal.test", 0.1, path="/stall")
         assert result.category == Category.TIMEOUT
         assert result.elapsed < 1
+
+
+def test_plain_http_does_not_load_a_certificate_store():
+    with http_server() as port:
+        with patch(
+            "ssl.SSLContext.load_verify_locations", side_effect=AssertionError("CA store read")
+        ):
+            result = probe_http("127.0.0.1", port, "service.internal.test", 2)
+        assert result.category == Category.SUCCESS
 
 
 @pytest.mark.parametrize("negative", [False, True])

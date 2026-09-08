@@ -1,0 +1,6 @@
+$ORIGIN internal.test.
+$TTL 30
+@ IN SOA ns.internal.test. hostmaster.internal.test. ( 1 60 60 60 30 )
+  IN NS ns.internal.test.
+ns IN A 10.10.0.53
+service IN A 10.20.0.10

@@ -1,0 +1,73 @@
+name: validation
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: validation-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  quality:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: pip
+          cache-dependency-path: requirements-dev.lock
+      - run: python -m pip install -c requirements-dev.lock '.[dev]'
+      - run: python -m ruff check .
+      - run: python -m ruff format --check .
+      - run: python -m mypy
+      - run: nete2e check-config
+      - run: nete2e --config environments/example.yaml check-config
+      - run: python scripts/check_structure.py
+
+  unit:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    strategy:
+      fail-fast: false
+      matrix:
+        python: ['3.11', '3.12']
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python }}
+          cache: pip
+          cache-dependency-path: requirements-dev.lock
+      - run: python -m pip install -c requirements-dev.lock '.[dev]'
+      - run: python -m pytest --junitxml=artifacts/unit.xml
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: unit-${{ matrix.python }}
+          path: artifacts/unit.xml
+
+  e2e:
+    needs: [quality, unit]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: docker compose config --quiet
+      - name: Build and validate clean topologies and regressions
+        run: python scripts/run_e2e.py --repeat 2 --scenarios
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: network-e2e-evidence
+          path: artifacts/
+          retention-days: 14
